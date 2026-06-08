@@ -3,8 +3,9 @@ import type { Letter, Point } from '../letters/types';
 import { angle, samplePolyline } from './geometry';
 import { createTraceState, applyPointer, type SampledStrokes, type TraceState } from './tracingState';
 
-const STEP = 0.06;       // checkpoint spacing — dense enough to force following the path
-const TOLERANCE = 0.10;  // how close the finger must stay to the next checkpoint
+const STEP = 0.06;          // checkpoint spacing — dense enough to force following the path
+const TOLERANCE = 0.10;     // how close the finger must stay to the next checkpoint
+const END_TOLERANCE = 0.045; // must reach this close to a stroke's end to finish it
 
 type Arrow = { x: number; y: number; deg: number };
 
@@ -47,7 +48,7 @@ export function TracingCanvas({ letter, color, onComplete }:
     if (e.buttons === 0 && e.pointerType === 'mouse') return;
     const pt = toUnit(e);
     setTrail((t) => [...t, pt]);
-    setState((st) => applyPointer(sampled, st, pt, TOLERANCE));
+    setState((st) => applyPointer(sampled, st, pt, TOLERANCE, END_TOLERANCE));
   }
 
   // The start marker sits at the beginning of the current stroke.

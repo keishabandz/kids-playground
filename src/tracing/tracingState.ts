@@ -14,12 +14,25 @@ export function createTraceState(): TraceState {
   return { strokeIndex: 0, checkpointIndex: 0, done: false };
 }
 
-/** Pure: if `p` is within `tolerance` of the next expected checkpoint, advance. */
-export function applyPointer(strokes: SampledStrokes, state: TraceState, p: Point, tolerance: number): TraceState {
+/**
+ * Pure: if `p` is within tolerance of the next expected checkpoint, advance.
+ * The last checkpoint of each stroke (its endpoint) uses the tighter
+ * `endTolerance`, so the finger must actually reach the end of a stroke before
+ * it counts as finished — the reward can't fire early.
+ */
+export function applyPointer(
+  strokes: SampledStrokes,
+  state: TraceState,
+  p: Point,
+  tolerance: number,
+  endTolerance: number = tolerance,
+): TraceState {
   if (state.done) return state;
   const stroke = strokes[state.strokeIndex];
   const target = stroke[state.checkpointIndex];
-  if (distance(p, target) > tolerance) return state;
+  const isStrokeEnd = state.checkpointIndex === stroke.length - 1;
+  const tol = isStrokeEnd ? endTolerance : tolerance;
+  if (distance(p, target) > tol) return state;
 
   let strokeIndex = state.strokeIndex;
   let checkpointIndex = state.checkpointIndex + 1;
