@@ -49,6 +49,23 @@ used to commercial products and it should not feel "icky" by comparison.
 - Keep it tight: don't over-detail; decide technical/implementation specifics
   without ceremony.
 
+## Development Process
+
+Iterative game-dev SDLC with **vertical-slice-first** milestones and
+**playtest-driven** iteration (the child is the playtester):
+
+- **M0 · Pre-production** — design doc (done) + implementation plan.
+- **M1 · Vertical Slice** — *one* letter (A) fully playable end-to-end on a real
+  phone: trace → reward → zoo. This is the **"is it fun?" gate** — playtest
+  before building more.
+- **M2 · Content / Alpha** — all A–Z with their personality sets, home grid,
+  PWA install.
+- **M3 · Polish / Beta ("juice")** — 60fps tuning, game-feel, safe-area &
+  cross-device QA, forgiveness tuning from playtests.
+- **M4 · Release** — deploy to Vercel; install on her device.
+
+After M1, every milestone ends with a playtest → notes → tune before advancing.
+
 ## The Letter Tracing Activity
 
 - **Canvas-based tracing.** Faint dotted outline of a letter + a green "start
