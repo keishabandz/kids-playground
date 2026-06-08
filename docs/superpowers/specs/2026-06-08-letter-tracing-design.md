@@ -27,6 +27,28 @@ activities (number tracing, patterns, guided drawing) reuse this engine.
 | Mascot guide | Deferred past V1 |
 | Reward model | Per-letter sets, cycled in a fixed predictable order |
 
+## Quality Bar (non-negotiable)
+
+This must feel like a **store-quality app**, not a hobby project — the child is
+used to commercial products and it should not feel "icky" by comparison.
+
+- **Polish & feel.** Smooth 60fps animations, no jank, instant load, app-like
+  full-screen feel. Installable as a **PWA** (home-screen icon, name, splash,
+  offline-capable) so it behaves like a native app, not a web page.
+- **Child-safe.** No ads, no external links, no accidental exits, no surprise
+  navigation. Nothing that can take her out of the experience.
+- **Works on any device.** iOS Safari **and** Android Chrome; phones **and**
+  tablets; portrait **and** landscape; small and large screens. Responsive
+  canvas, touch-first targets, safe-area / notch handling. Verified on real
+  mobile, not just desktop resize.
+
+## Working Style
+
+- **Collaborate on child-level creative calls** (faces, colors, what feels fun)
+  — ask before deciding those.
+- Keep it tight: don't over-detail; decide technical/implementation specifics
+  without ceremony.
+
 ## The Letter Tracing Activity
 
 - **Canvas-based tracing.** Faint dotted outline of a letter + a green "start
