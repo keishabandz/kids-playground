@@ -5,10 +5,11 @@ import { createTraceState, applyPointer, progress, type SampledStrokes } from '.
 const mk = (y: number) => [0, 0.2, 0.4, 0.6, 0.8, 1].map((x) => ({ x, y }));
 const S: SampledStrokes = [mk(0), mk(1)];
 const TOL = 0.1;
+const END = 0.05;
 const LA = 3;
 
 const hit = (s: ReturnType<typeof createTraceState>, p: { x: number; y: number }) =>
-  applyPointer(S, s, p, TOL, LA);
+  applyPointer(S, s, p, TOL, END, LA);
 
 test('starts not started, not done', () => {
   expect(createTraceState()).toEqual({ strokeIndex: 0, frontier: -1, done: false });
@@ -57,6 +58,16 @@ test('reaching the end advances to the next stroke, then finishes', () => {
   expect(s).toMatchObject({ strokeIndex: 1, frontier: -1, done: false });
   for (const x of [0, 0.2, 0.4, 0.6, 0.8, 1]) s = hit(s, { x, y: 1 }); // finish stroke 1
   expect(s.done).toBe(true);
+});
+
+test('endpoint needs the tight radius — near-but-not-at the tip does not finish', () => {
+  let s = createTraceState();
+  for (const x of [0, 0.2, 0.4, 0.6, 0.8]) s = hit(s, { x, y: 0 }); // frontier at idx4 (x=0.8)
+  // x=0.92 is 0.08 from the endpoint (x=1): within TOL (0.1) but outside END (0.05)
+  s = hit(s, { x: 0.92, y: 0 });
+  expect(s.strokeIndex).toBe(0); // not finished — must reach the tip
+  s = hit(s, { x: 0.98, y: 0 }); // within END of the tip
+  expect(s.strokeIndex).toBe(1); // now the stroke completed
 });
 
 test('progress grows 0 -> 1', () => {

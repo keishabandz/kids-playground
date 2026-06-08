@@ -30,6 +30,7 @@ export function applyPointer(
   state: TraceState,
   p: Point,
   tolerance: number,
+  endTolerance: number = tolerance,
   lookahead: number = 3,
 ): TraceState {
   if (state.done) return state;
@@ -39,7 +40,10 @@ export function applyPointer(
   let frontier = state.frontier;
   const to = Math.min(last, frontier + lookahead);
   for (let k = frontier + 1; k <= to; k++) {
-    if (distance(p, stroke[k]) <= tolerance) frontier = Math.max(frontier, k);
+    // The endpoint needs a tight radius so the finger must actually reach the
+    // tip; mid-stroke checkpoints stay forgiving.
+    const tol = k === last ? endTolerance : tolerance;
+    if (distance(p, stroke[k]) <= tol) frontier = Math.max(frontier, k);
   }
 
   if (frontier >= last) {
