@@ -3,18 +3,17 @@ import type { Letter, Point } from '../letters/types';
 import { angle, samplePolyline } from './geometry';
 import { createTraceState, applyPointer, type SampledStrokes, type TraceState } from './tracingState';
 
-const STEP = 0.06;          // checkpoint spacing — dense enough to force following the path
-const TOLERANCE = 0.10;     // how close the finger must stay to the next checkpoint
-const END_TOLERANCE = 0.045; // must reach this close to a stroke's end to finish it
+const STEP = 0.06;           // checkpoint spacing
+const TOLERANCE = 0.11;      // forgiving mid-stroke radius
+const END_TOLERANCE = 0.06;  // must get this close to a stroke's end to finish it
+const COVERAGE = 0.78;       // fraction of a stroke that must be covered (skip-tolerant)
 
 type Arrow = { x: number; y: number; deg: number };
 
 function arrowsFor(points: Point[]): Arrow[] {
   const arrows: Arrow[] = [];
   for (let i = 0; i < points.length - 1; i += 4) {
-    const a = points[i];
-    const b = points[i + 1];
-    arrows.push({ x: a.x, y: a.y, deg: (angle(a, b) * 180) / Math.PI });
+    arrows.push({ x: points[i].x, y: points[i].y, deg: (angle(points[i], points[i + 1]) * 180) / Math.PI });
   }
   return arrows;
 }
@@ -31,7 +30,6 @@ export function TracingCanvas({ letter, color, onComplete }:
     [letter],
   );
 
-  // Fire completion exactly once, outside the state updater (StrictMode-safe).
   useEffect(() => {
     if (state.done && !firedRef.current) {
       firedRef.current = true;
@@ -48,11 +46,15 @@ export function TracingCanvas({ letter, color, onComplete }:
     if (e.buttons === 0 && e.pointerType === 'mouse') return;
     const pt = toUnit(e);
     setTrail((t) => [...t, pt]);
-    setState((st) => applyPointer(sampled, st, pt, TOLERANCE, END_TOLERANCE));
+    setState((st) => applyPointer(sampled, st, pt, TOLERANCE, END_TOLERANCE, COVERAGE));
   }
 
-  // The start marker sits at the beginning of the current stroke.
-  const startDot = state.checkpointIndex === 0 ? sampled[state.strokeIndex]?.[0] : undefined;
+  const coveredNow = new Set(state.covered);
+  const isCovered = (strokeI: number, j: number) =>
+    state.done || strokeI < state.strokeIndex || (strokeI === state.strokeIndex && coveredNow.has(j));
+
+  // "Start here" marker on the current stroke, until it's been started.
+  const startDot = state.covered.length === 0 ? sampled[state.strokeIndex]?.[0] : undefined;
 
   return (
     <svg
@@ -63,11 +65,11 @@ export function TracingCanvas({ letter, color, onComplete }:
       onPointerMove={handleMove}
       style={{ width: 'min(82vw, 70vh)', height: 'min(82vw, 70vh)', touchAction: 'none' }}
     >
-      {/* dotted outline */}
       {sampled.map((stroke, i) => (
         <g key={i}>
+          {/* dotted outline — dots fill with the letter color as they're covered */}
           {stroke.map((c, j) => (
-            <circle key={j} cx={c.x} cy={c.y} r={0.014} fill="#cbd5e1" />
+            <circle key={j} cx={c.x} cy={c.y} r={0.016} fill={isCovered(i, j) ? color : '#cbd5e1'} />
           ))}
           {/* direction arrows */}
           {arrowsFor(stroke).map((ar, k) => (
@@ -92,7 +94,7 @@ export function TracingCanvas({ letter, color, onComplete }:
           points={trail.map((pt) => `${pt.x},${pt.y}`).join(' ')}
         />
       )}
-      {/* "start here" marker for the current stroke */}
+      {/* "start here" marker */}
       {startDot && (
         <circle cx={startDot.x} cy={startDot.y} r={0.045} fill="#22c55e">
           <animate attributeName="r" values="0.04;0.055;0.04" dur="1s" repeatCount="indefinite" />

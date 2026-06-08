@@ -6,19 +6,24 @@ export type SampledStrokes = Point[][];
 
 export type TraceState = {
   strokeIndex: number;
-  checkpointIndex: number;
+  /** Covered checkpoint indices within the CURRENT stroke (any order). */
+  covered: number[];
   done: boolean;
 };
 
 export function createTraceState(): TraceState {
-  return { strokeIndex: 0, checkpointIndex: 0, done: false };
+  return { strokeIndex: 0, covered: [], done: false };
 }
 
 /**
- * Pure: if `p` is within tolerance of the next expected checkpoint, advance.
- * The last checkpoint of each stroke (its endpoint) uses the tighter
- * `endTolerance`, so the finger must actually reach the end of a stroke before
- * it counts as finished — the reward can't fire early.
+ * Coverage-based, skip-tolerant tracing.
+ *
+ * As the finger moves, any checkpoint of the current stroke within tolerance is
+ * marked covered (order doesn't matter — wobble and speed are forgiven). A
+ * stroke finishes when enough of it is covered (`coverage`) AND its endpoint is
+ * reached (within the tighter `endTolerance`), so a sloppy partial line can't
+ * complete it but a fast imperfect trace can. Strokes are still completed in
+ * order, then the letter is done.
  */
 export function applyPointer(
   strokes: SampledStrokes,
@@ -26,33 +31,38 @@ export function applyPointer(
   p: Point,
   tolerance: number,
   endTolerance: number = tolerance,
+  coverage: number = 0.8,
 ): TraceState {
   if (state.done) return state;
   const stroke = strokes[state.strokeIndex];
-  const target = stroke[state.checkpointIndex];
-  const isStrokeEnd = state.checkpointIndex === stroke.length - 1;
-  const tol = isStrokeEnd ? endTolerance : tolerance;
-  if (distance(p, target) > tol) return state;
+  const last = stroke.length - 1;
 
-  let strokeIndex = state.strokeIndex;
-  let checkpointIndex = state.checkpointIndex + 1;
-  if (checkpointIndex >= stroke.length) {
-    strokeIndex += 1;
-    checkpointIndex = 0;
+  const covered = new Set(state.covered);
+  for (let j = 0; j < stroke.length; j++) {
+    const tol = j === last ? endTolerance : tolerance;
+    if (distance(p, stroke[j]) <= tol) covered.add(j);
   }
-  if (strokeIndex >= strokes.length) {
-    return { strokeIndex: state.strokeIndex, checkpointIndex: state.checkpointIndex, done: true };
+
+  const strokeComplete = covered.has(last) && covered.size / stroke.length >= coverage;
+  if (strokeComplete) {
+    const nextStroke = state.strokeIndex + 1;
+    if (nextStroke >= strokes.length) {
+      return { strokeIndex: state.strokeIndex, covered: sorted(covered), done: true };
+    }
+    return { strokeIndex: nextStroke, covered: [], done: false };
   }
-  return { strokeIndex, checkpointIndex, done: false };
+  return { strokeIndex: state.strokeIndex, covered: sorted(covered), done: false };
+}
+
+function sorted(set: Set<number>): number[] {
+  return Array.from(set).sort((a, b) => a - b);
 }
 
 /** Fraction of all checkpoints covered, 0..1. */
 export function progress(strokes: SampledStrokes, state: TraceState): number {
   const total = strokes.reduce((n, s) => n + s.length, 0);
-  if (total === 0) return 1;
-  let covered = 0;
-  for (let i = 0; i < state.strokeIndex; i++) covered += strokes[i].length;
-  covered += state.checkpointIndex;
-  if (state.done) covered = total;
-  return covered / total;
+  if (total === 0 || state.done) return 1;
+  let done = 0;
+  for (let i = 0; i < state.strokeIndex; i++) done += strokes[i].length;
+  return (done + state.covered.length) / total;
 }
