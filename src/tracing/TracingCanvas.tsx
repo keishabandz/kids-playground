@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Letter, Point } from '../letters/types';
 import { createTraceState, applyPointer, progress, type TraceState } from './tracingState';
 
@@ -9,6 +9,15 @@ export function TracingCanvas({ letter, color, onComplete }:
   const ref = useRef<SVGSVGElement>(null);
   const [state, setState] = useState<TraceState>(createTraceState);
   const [trail, setTrail] = useState<Point[]>([]);
+  const firedRef = useRef(false);
+
+  // Fire completion exactly once, outside the state updater (StrictMode-safe).
+  useEffect(() => {
+    if (state.done && !firedRef.current) {
+      firedRef.current = true;
+      onComplete();
+    }
+  }, [state.done, onComplete]);
 
   function toUnit(e: React.PointerEvent): Point {
     const r = ref.current!.getBoundingClientRect();
@@ -19,11 +28,7 @@ export function TracingCanvas({ letter, color, onComplete }:
     if (e.buttons === 0 && e.pointerType === 'mouse') return;
     const p = toUnit(e);
     setTrail((t) => [...t, p]);
-    setState((s) => {
-      const next = applyPointer(letter, s, p, TOLERANCE);
-      if (next.done && !s.done) setTimeout(onComplete, 0);
-      return next;
-    });
+    setState((s) => applyPointer(letter, s, p, TOLERANCE));
   }
 
   const start = letter.strokes[0].checkpoints[0];

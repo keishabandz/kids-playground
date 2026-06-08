@@ -9,13 +9,15 @@ export function LetterTracingScreen({ onHome }: { onHome: () => void }) {
   const [phase, setPhase] = useState<'trace' | 'reward'>('trace');
   const [traceKey, setTraceKey] = useState(0);
 
+  // `shown` = how many times traced so far; the earned reward is that letter's
+  // next personality in fixed order. Advance only when starting the next trace.
   const personality = nextPersonality(letterA.personalities, shown);
 
   function handleComplete() {
     setPhase('reward');
-    setShown((n) => n + 1);
   }
   function again() {
+    setShown((n) => n + 1);
     setPhase('trace');
     setTraceKey((k) => k + 1); // reset the canvas
   }
