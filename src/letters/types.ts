@@ -1,8 +1,12 @@
 /** Normalized coordinate in the unit square; (0,0) top-left, (1,1) bottom-right. */
 export type Point = { x: number; y: number };
 
-/** One pen stroke: ordered checkpoints the child must pass through in order. */
-export type Stroke = { checkpoints: Point[] };
+/**
+ * One pen stroke, defined by its anchor points (corners) in draw order.
+ * The first anchor is where the child starts; arrows point toward the next.
+ * Anchors are densely sampled into checkpoints for hit-detection.
+ */
+export type Stroke = { points: Point[] };
 
 export type BehaviourId = 'googly-dance' | 'silly-tongue' | 'star-bounce';
 
