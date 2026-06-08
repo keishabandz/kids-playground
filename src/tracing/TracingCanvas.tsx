@@ -3,36 +3,28 @@ import type { Letter, Point } from '../letters/types';
 import { angle, samplePolyline } from './geometry';
 import { createTraceState, applyPointer, type SampledStrokes, type TraceState } from './tracingState';
 
-const STEP = 0.06;          // checkpoint spacing
-const TOLERANCE = 0.11;     // forgiving radius for mid-stroke checkpoints
-const END_TOLERANCE = 0.05; // tight radius for a stroke's endpoint — must reach the tip
-const LOOKAHEAD = 3;        // how many checkpoints it may jump ahead (forgives speed/wobble)
+const STEP = 0.04;          // checkpoint spacing (fine, for smooth fill)
+const TOLERANCE = 0.12;     // forgiving radius for mid-stroke checkpoints
+const END_TOLERANCE = 0.06; // tight radius for a stroke's endpoint — must reach the tip
+const LOOKAHEAD = 5;        // checkpoints it may jump ahead (forgives speed/wobble)
 
-type Arrow = { x: number; y: number; deg: number };
+const TRACK_W = 0.09;       // grey guide-track thickness
+const INK_W = 0.078;        // filled ink thickness
 
-function arrowsFor(points: Point[]): Arrow[] {
-  const arrows: Arrow[] = [];
-  for (let i = 0; i < points.length - 1; i += 4) {
-    arrows.push({ x: points[i].x, y: points[i].y, deg: (angle(points[i], points[i + 1]) * 180) / Math.PI });
-  }
-  return arrows;
+function ptsStr(points: Point[]): string {
+  return points.map((p) => `${p.x},${p.y}`).join(' ');
 }
 
 export function TracingCanvas({ letter, color, onComplete }:
   { letter: Letter; color: string; onComplete: () => void }) {
   const ref = useRef<SVGSVGElement>(null);
   const [state, setState] = useState<TraceState>(createTraceState);
-  const [trail, setTrail] = useState<Point[]>([]);
   const firedRef = useRef(false);
 
   const sampled: SampledStrokes = useMemo(
     () => letter.strokes.map((stroke) => samplePolyline(stroke.points, STEP)),
     [letter],
   );
-
-  // Reset trail when the active stroke changes (so the reveal restarts per stroke).
-  const activeStroke = state.strokeIndex;
-  useEffect(() => { setTrail([]); }, [activeStroke]);
 
   useEffect(() => {
     if (state.done && !firedRef.current) {
@@ -49,22 +41,30 @@ export function TracingCanvas({ letter, color, onComplete }:
   function handleMove(e: React.PointerEvent) {
     if (e.buttons === 0 && e.pointerType === 'mouse') return;
     const pt = toUnit(e);
-    setState((st) => {
-      const next = applyPointer(sampled, st, pt, TOLERANCE, END_TOLERANCE, LOOKAHEAD);
-      if (next.strokeIndex === st.strokeIndex) setTrail((t) => [...t, pt]);
-      return next;
-    });
+    setState((st) => applyPointer(sampled, st, pt, TOLERANCE, END_TOLERANCE, LOOKAHEAD));
   }
 
-  const dotFill = (i: number, j: number) => {
-    if (state.done || i < state.strokeIndex) return color;        // completed strokes
-    if (i === state.strokeIndex) return j <= state.frontier ? color : '#cbd5e1'; // active
-    return '#e8eaf0';                                              // upcoming (dim)
+  const active = state.strokeIndex;
+
+  // Ink (filled portion) for a stroke, snapped to its guide path.
+  const inkPoints = (i: number): Point[] => {
+    if (state.done || i < active) return sampled[i];                 // completed strokes: full
+    if (i === active && state.frontier >= 0) return sampled[i].slice(0, state.frontier + 1);
+    return [];                                                       // upcoming: none
   };
 
-  // The glowing "go here next" dot on the active stroke.
-  const active = sampled[state.strokeIndex];
-  const nextTarget = active ? active[Math.min(active.length - 1, state.frontier + 1)] : undefined;
+  // Direction arrows along the active stroke only.
+  const activePts = sampled[active] ?? [];
+  const arrows = activePts.filter((_, i) => i % 8 === 2 && i < activePts.length - 2)
+    .map((p, idx) => {
+      const i = activePts.indexOf(p);
+      return { x: p.x, y: p.y, deg: (angle(p, activePts[i + 1]) * 180) / Math.PI, key: idx };
+    });
+
+  // The moving star: the next point the finger should reach on the active stroke.
+  const star = !state.done && activePts.length
+    ? activePts[Math.min(activePts.length - 1, state.frontier + 1)]
+    : undefined;
 
   return (
     <svg
@@ -75,39 +75,30 @@ export function TracingCanvas({ letter, color, onComplete }:
       onPointerMove={handleMove}
       style={{ width: 'min(82vw, 70vh)', height: 'min(82vw, 70vh)', touchAction: 'none' }}
     >
-      {sampled.map((stroke, i) => (
-        <g key={i}>
-          {stroke.map((c, j) => (
-            <circle key={j} cx={c.x} cy={c.y} r={0.016} fill={dotFill(i, j)} />
-          ))}
-          {/* arrows only on the active stroke (guidance for the current part) */}
-          {i === state.strokeIndex && arrowsFor(stroke).map((ar, k) => (
-            <polygon
-              key={`a${k}`}
-              points="-0.012,-0.02 0.028,0 -0.012,0.02"
-              fill="#60a5fa"
-              transform={`translate(${ar.x} ${ar.y}) rotate(${ar.deg})`}
-            />
-          ))}
-        </g>
+      {/* grey guide track for the whole letter */}
+      {sampled.map((s, i) => (
+        <polyline key={`t${i}`} points={ptsStr(s)} fill="none" stroke="#e5e7eb"
+                  strokeWidth={TRACK_W} strokeLinecap="round" strokeLinejoin="round" />
       ))}
-      {/* trace-to-reveal trail for the active stroke */}
-      {trail.length > 1 && (
-        <polyline
-          fill="none"
-          stroke={color}
-          strokeOpacity={0.85}
-          strokeWidth={0.06}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          points={trail.map((pt) => `${pt.x},${pt.y}`).join(' ')}
-        />
-      )}
-      {/* glowing "go here next" guide dot */}
-      {nextTarget && !state.done && (
-        <circle cx={nextTarget.x} cy={nextTarget.y} r={0.05} fill="#22c55e">
-          <animate attributeName="r" values="0.04;0.06;0.04" dur="0.9s" repeatCount="indefinite" />
-        </circle>
+      {/* colored ink, snapped to the path, filling as the child traces */}
+      {sampled.map((_s, i) => {
+        const ip = inkPoints(i);
+        if (ip.length === 1) return <circle key={`k${i}`} cx={ip[0].x} cy={ip[0].y} r={INK_W / 2} fill={color} />;
+        if (ip.length > 1) return <polyline key={`k${i}`} points={ptsStr(ip)} fill="none" stroke={color}
+                                            strokeWidth={INK_W} strokeLinecap="round" strokeLinejoin="round" />;
+        return null;
+      })}
+      {/* direction arrows on the active stroke */}
+      {!state.done && arrows.map((ar) => (
+        <polygon key={`a${ar.key}`} points="-0.01,-0.016 0.024,0 -0.01,0.016" fill="#3b82f6"
+                 opacity={0.7} transform={`translate(${ar.x} ${ar.y}) rotate(${ar.deg})`} />
+      ))}
+      {/* moving star guide ("start at the star, follow it") */}
+      {star && (
+        <text x={star.x} y={star.y} fontSize={0.14} textAnchor="middle" dominantBaseline="central">
+          ⭐
+          <animate attributeName="font-size" values="0.12;0.17;0.12" dur="0.9s" repeatCount="indefinite" />
+        </text>
       )}
     </svg>
   );
