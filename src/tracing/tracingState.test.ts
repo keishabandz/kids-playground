@@ -1,62 +1,80 @@
 import { test, expect } from 'vitest';
 import { createTraceState, applyPointer, progress, type SampledStrokes } from './tracingState';
 
-// 2 strokes, each already sampled into 2 checkpoints.
-const S: SampledStrokes = [
-  [ { x: 0, y: 0 }, { x: 1, y: 0 } ],
-  [ { x: 0.5, y: 0 }, { x: 0.5, y: 1 } ],
-];
-const TOL = 0.15;
+// One stroke, 5 evenly spaced checkpoints along the x axis.
+const ONE: SampledStrokes = [[
+  { x: 0, y: 0 }, { x: 0.25, y: 0 }, { x: 0.5, y: 0 }, { x: 0.75, y: 0 }, { x: 1, y: 0 },
+]];
+const TOL = 0.1;
+const END = 0.05;
+const COV = 0.8;
 
-test('starts at first checkpoint of first stroke, not done', () => {
-  expect(createTraceState()).toEqual({ strokeIndex: 0, checkpointIndex: 0, done: false });
+const hit = (s: ReturnType<typeof createTraceState>, x: number, y = 0) =>
+  applyPointer(ONE, s, { x, y }, TOL, END, COV);
+
+test('starts empty, not done', () => {
+  expect(createTraceState()).toEqual({ strokeIndex: 0, covered: [], done: false });
 });
 
-test('pointer far from target does nothing', () => {
-  const s = applyPointer(S, createTraceState(), { x: 0.9, y: 0.9 }, TOL);
-  expect(s.checkpointIndex).toBe(0);
+test('far pointer covers nothing', () => {
+  expect(hit(createTraceState(), 0.5, 0.9).covered).toEqual([]);
 });
 
-test('pointer near next checkpoint advances within stroke', () => {
-  const s = applyPointer(S, createTraceState(), { x: 0.05, y: 0.05 }, TOL);
-  expect(s).toMatchObject({ strokeIndex: 0, checkpointIndex: 1, done: false });
-});
-
-test('finishing a stroke advances to next stroke', () => {
+test('skip-tolerant: 80% coverage + endpoint completes even with a gap', () => {
   let s = createTraceState();
-  s = applyPointer(S, s, { x: 0, y: 0 }, TOL);
-  s = applyPointer(S, s, { x: 1, y: 0 }, TOL);
-  expect(s).toMatchObject({ strokeIndex: 1, checkpointIndex: 0, done: false });
-});
-
-test('covering all strokes marks done', () => {
-  let s = createTraceState();
-  for (const stroke of S) for (const cp of stroke) s = applyPointer(S, s, cp, TOL);
-  expect(s.done).toBe(true);
-});
-
-test('progress goes 0 -> 1', () => {
-  let s = createTraceState();
-  expect(progress(S, s)).toBe(0);
-  for (const stroke of S) for (const cp of stroke) s = applyPointer(S, s, cp, TOL);
-  expect(progress(S, s)).toBe(1);
-});
-
-test('out-of-order pointer cannot skip ahead (must follow path)', () => {
-  // jumping straight to the far checkpoint of stroke 1 does nothing
-  const s = applyPointer(S, createTraceState(), { x: 0.5, y: 1 }, TOL);
-  expect(s).toMatchObject({ strokeIndex: 0, checkpointIndex: 0 });
-});
-
-test('stroke endpoint requires the tighter endTolerance', () => {
-  // One stroke, two checkpoints; the 2nd is the endpoint.
-  const one = [[ { x: 0, y: 0 }, { x: 1, y: 0 } ]];
-  let s = applyPointer(one, createTraceState(), { x: 0, y: 0 }, 0.15, 0.05); // hit start
-  expect(s.checkpointIndex).toBe(1);
-  // 0.1 away from the endpoint: allowed by tolerance (0.15) but NOT endTolerance (0.05)
-  s = applyPointer(one, s, { x: 0.9, y: 0 }, 0.15, 0.05);
+  s = hit(s, 0);     // idx 0
+  s = hit(s, 0.25);  // idx 1
+  // skip idx 2 (the middle) — like a fast finger
+  s = hit(s, 0.75);  // idx 3
   expect(s.done).toBe(false);
-  // within endTolerance of the endpoint: now it finishes
-  s = applyPointer(one, s, { x: 0.97, y: 0 }, 0.15, 0.05);
+  s = hit(s, 1);     // idx 4 (endpoint) -> 4/5 = 0.8 + endpoint => done
   expect(s.done).toBe(true);
+});
+
+test('order does not matter (endpoint first is fine)', () => {
+  let s = createTraceState();
+  s = hit(s, 1);     // endpoint first
+  s = hit(s, 0);
+  s = hit(s, 0.25);
+  s = hit(s, 0.75);  // 0,1,3,4 covered = 0.8 + endpoint
+  expect(s.done).toBe(true);
+});
+
+test('cannot finish without reaching the endpoint', () => {
+  let s = createTraceState();
+  s = hit(s, 0);
+  s = hit(s, 0.25);
+  s = hit(s, 0.5);
+  s = hit(s, 0.75); // 0..3 covered = 0.8 but endpoint missing
+  expect(s.done).toBe(false);
+  s = hit(s, 0.9);  // 0.1 from endpoint > END (0.05): still not covered
+  expect(s.done).toBe(false);
+  s = hit(s, 0.97); // within END of endpoint
+  expect(s.done).toBe(true);
+});
+
+test('a too-short partial line cannot complete', () => {
+  let s = createTraceState();
+  s = hit(s, 0);
+  s = hit(s, 0.25); // only 2/5 = 0.4 coverage, no endpoint
+  expect(s.done).toBe(false);
+});
+
+test('multi-stroke advances then finishes', () => {
+  const TWO: SampledStrokes = [
+    [{ x: 0, y: 0 }, { x: 0.5, y: 0 }, { x: 1, y: 0 }],
+    [{ x: 0, y: 1 }, { x: 0.5, y: 1 }, { x: 1, y: 1 }],
+  ];
+  let s = createTraceState();
+  for (const p of TWO[0]) s = applyPointer(TWO, s, p, TOL, END, 0.9);
+  expect(s).toMatchObject({ strokeIndex: 1, done: false });
+  for (const p of TWO[1]) s = applyPointer(TWO, s, p, TOL, END, 0.9);
+  expect(s.done).toBe(true);
+});
+
+test('progress grows from 0 to 1', () => {
+  let s = createTraceState();
+  expect(progress(ONE, s)).toBe(0);
+  for (const x of [0, 0.25, 0.5, 0.75, 1]) s = hit(s, x);
+  expect(progress(ONE, s)).toBe(1);
 });
