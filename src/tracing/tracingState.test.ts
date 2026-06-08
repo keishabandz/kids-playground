@@ -47,3 +47,16 @@ test('out-of-order pointer cannot skip ahead (must follow path)', () => {
   const s = applyPointer(S, createTraceState(), { x: 0.5, y: 1 }, TOL);
   expect(s).toMatchObject({ strokeIndex: 0, checkpointIndex: 0 });
 });
+
+test('stroke endpoint requires the tighter endTolerance', () => {
+  // One stroke, two checkpoints; the 2nd is the endpoint.
+  const one = [[ { x: 0, y: 0 }, { x: 1, y: 0 } ]];
+  let s = applyPointer(one, createTraceState(), { x: 0, y: 0 }, 0.15, 0.05); // hit start
+  expect(s.checkpointIndex).toBe(1);
+  // 0.1 away from the endpoint: allowed by tolerance (0.15) but NOT endTolerance (0.05)
+  s = applyPointer(one, s, { x: 0.9, y: 0 }, 0.15, 0.05);
+  expect(s.done).toBe(false);
+  // within endTolerance of the endpoint: now it finishes
+  s = applyPointer(one, s, { x: 0.97, y: 0 }, 0.15, 0.05);
+  expect(s.done).toBe(true);
+});
