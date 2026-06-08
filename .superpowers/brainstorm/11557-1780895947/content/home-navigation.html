@@ -1,0 +1,51 @@
+<h2>How should your daughter pick an activity?</h2>
+<p class="subtitle">This is the first screen she sees. She can't read yet, so it has to work with pictures + colors only. Click the one that feels right.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="grid" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#fdf2f8;padding:0;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;">
+        <div style="background:#ff6b6b;border-radius:18px;height:70px;display:flex;align-items:center;justify-content:center;font-size:34px;">🔤</div>
+        <div style="background:#4ecdc4;border-radius:18px;height:70px;display:flex;align-items:center;justify-content:center;font-size:34px;">🔢</div>
+        <div style="background:#ffd93d;border-radius:18px;height:70px;display:flex;align-items:center;justify-content:center;font-size:34px;">🧩</div>
+        <div style="background:#a78bfa;border-radius:18px;height:70px;display:flex;align-items:center;justify-content:center;font-size:34px;">✏️</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · Grid of big tiles</h3>
+      <p>All games visible at once as huge colorful buttons. One tap to enter. Simple, predictable, nothing hidden.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="carousel" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#eff6ff;padding:0;">
+      <div style="display:flex;align-items:center;gap:10px;padding:16px;overflow:hidden;">
+        <div style="background:#cbd5e1;border-radius:18px;height:110px;min-width:40px;"></div>
+        <div style="background:#ff6b6b;border-radius:22px;height:140px;min-width:120px;display:flex;align-items:center;justify-content:center;font-size:48px;box-shadow:0 8px 20px rgba(0,0,0,.15);">🔤</div>
+        <div style="background:#cbd5e1;border-radius:18px;height:110px;min-width:40px;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · Swipe carousel</h3>
+      <p>One giant card at a time, swipe left/right to browse. Very focused — only one choice in view. But swiping can be fiddly for tiny hands.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="map" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(#bae6fd,#bbf7d0);padding:0;position:relative;">
+      <div style="position:absolute;top:18px;left:24px;font-size:30px;">🔤</div>
+      <div style="position:absolute;top:60px;right:30px;font-size:30px;">🔢</div>
+      <div style="position:absolute;bottom:24px;left:40px;font-size:30px;">🧩</div>
+      <div style="position:absolute;bottom:40px;right:50px;font-size:30px;">✏️</div>
+      <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><path d=%22M10 80 Q 50 20 90 70%22 stroke=%22%23ffffff%22 fill=%22none%22 stroke-width=%224%22 stroke-dasharray=%226 8%22/></svg>');opacity:.7;"></div>
+    </div>
+    <div class="card-body">
+      <h3>C · Playful map / scene</h3>
+      <p>Games live as spots on a cute island/playground scene. Most magical and "game-like" — but more art work, and can become a distraction itself.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px;">My recommendation: <strong>A · Grid of big tiles</strong> — least friction for a toddler, fastest to build, and matches your "bright but no distractions" goal. We can always dress it up later.</p>
