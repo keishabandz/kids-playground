@@ -12,3 +12,8 @@ body { overscroll-behavior: none; -webkit-user-select: none; user-select: none; 
 @keyframes bounce { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-18px) scale(1.05)} }
 .googly-eyes { animation: googly .8s ease-in-out infinite; }
 @keyframes googly { 0%,100%{transform:translate(0,2px)} 25%{transform:translate(7px,-7px)} 50%{transform:translate(0,3px)} 75%{transform:translate(-7px,-5px)} }
+
+/* Celebration marquee — all glyphs dance across the screen */
+.marquee { overflow: hidden; }
+.marquee-inner { display: flex; align-items: center; gap: 16px; width: max-content; animation: scrollx 40s linear infinite; }
+@keyframes scrollx { from { transform: translateX(0); } to { transform: translateX(-50%); } }
