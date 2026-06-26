@@ -82,19 +82,21 @@ export function DanceScreen({ onHome }: { onHome: () => void }) {
       <button onClick={onHome} aria-label="home" className="absolute top-3 left-3 text-3xl z-10">🏠</button>
       <div className="dance-notes" aria-hidden>🎵 🎶 ⭐ 🎵 🎶</div>
 
-      <div className="dancers">
-        {CHARACTERS.map((c, i) => {
-          const pose = SEQ[(beat + i) % SEQ.length];
-          return (
-            <img
-              key={c}
-              src={`/dance/${c}-${pose}.png`}
-              alt={c}
-              className="dancer"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            />
-          );
-        })}
+      <div className="dance-marquee">
+        <div className="dancers">
+          {[...CHARACTERS, ...CHARACTERS].map((c, i) => {
+            const pose = SEQ[(beat + i) % SEQ.length];
+            return (
+              <img
+                key={i}
+                src={`/dance/${c}-${pose}.png`}
+                alt={c}
+                className="dancer"
+                style={{ animationDelay: `${(i % CHARACTERS.length) * 0.1}s` }}
+              />
+            );
+          })}
+        </div>
       </div>
 
       <div className="dance-controls">
