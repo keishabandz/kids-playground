@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 .vercel
 Untitled.ipynb
+
+# user-supplied audio for the dance screen — never commit/deploy copyrighted tracks
+public/dance/*.mp3
+public/dance/*.m4a
+public/dance/*.wav

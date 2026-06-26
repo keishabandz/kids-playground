@@ -13,6 +13,29 @@ body { overscroll-behavior: none; -webkit-user-select: none; user-select: none; 
 .googly-eyes { animation: googly .8s ease-in-out infinite; }
 @keyframes googly { 0%,100%{transform:translate(0,2px)} 25%{transform:translate(7px,-7px)} 50%{transform:translate(0,3px)} 75%{transform:translate(-7px,-5px)} }
 
+/* Dance Party */
+.dance-stage {
+  position: relative; height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; overflow: hidden;
+  background: linear-gradient(160deg, #fde68a, #fbcfe8 45%, #c7d2fe);
+}
+.dancers { display: flex; align-items: flex-end; justify-content: center; gap: clamp(4px, 2vw, 22px); flex-wrap: nowrap; padding: 0 8px; }
+.dancer {
+  height: clamp(110px, 30vh, 240px); width: auto;
+  transform-origin: bottom center;
+  animation: dance-jig 0.7s ease-in-out infinite;
+  filter: drop-shadow(0 6px 6px rgba(0,0,0,0.12));
+}
+@keyframes dance-jig {
+  0%   { transform: translateY(0) rotate(-5deg) scale(calc(1 + var(--level) * 0.10)); }
+  50%  { transform: translateY(calc(-12px - var(--level) * 22px)) rotate(5deg) scale(calc(1 + var(--level) * 0.18)); }
+  100% { transform: translateY(0) rotate(-5deg) scale(calc(1 + var(--level) * 0.10)); }
+}
+.dance-controls { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+.dance-btn { color: #fff; font-weight: 800; font-size: 1.25rem; padding: 12px 22px; border-radius: 18px; box-shadow: 0 6px 16px rgba(0,0,0,.15); }
+.dance-notes { position: absolute; top: 14px; width: 100%; text-align: center; font-size: 26px; letter-spacing: 18px; opacity: .5; animation: notes-float 3s ease-in-out infinite; }
+@keyframes notes-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
 /* Celebration marquee — all glyphs dance across the screen */
 .marquee { overflow: hidden; }
 .marquee-inner { display: flex; align-items: center; gap: 16px; width: max-content; animation: scrollx 40s linear infinite; }
