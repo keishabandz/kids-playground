@@ -18,4 +18,7 @@ export type Letter = {
   strokes: Stroke[];
   /** This letter's own ordered set, cycled in fixed order on each reward. */
   personalities: Personality[];
+  /** Optional picture-word association (e.g. "ant"), shown in the Words set. */
+  word?: string;
+  emoji?: string;
 };
