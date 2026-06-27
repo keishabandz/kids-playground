@@ -3,19 +3,31 @@ import { HomeGrid } from './screens/HomeGrid';
 import { LetterTracingScreen } from './screens/LetterTracingScreen';
 import { CelebrationScreen } from './screens/CelebrationScreen';
 import { DanceScreen } from './screens/DanceScreen';
+import { WordTracingScreen } from './screens/WordTracingScreen';
 import { SETS, getSet, type SetId } from './letters/sets';
 
-type View = { s: 'home' } | { s: 'trace'; id: SetId } | { s: 'celebrate'; id: SetId } | { s: 'dance' };
+type View = { s: 'home' } | { s: 'trace'; id: SetId } | { s: 'celebrate'; id: SetId } | { s: 'dance' } | { s: 'words' };
 
 export default function App() {
   const [view, setView] = useState<View>({ s: 'home' });
 
   if (view.s === 'home') {
-    return <HomeGrid sets={SETS} onPick={(id) => setView({ s: 'trace', id })} onDance={() => setView({ s: 'dance' })} />;
+    return (
+      <HomeGrid
+        sets={SETS}
+        onPick={(id) => setView({ s: 'trace', id })}
+        onDance={() => setView({ s: 'dance' })}
+        onWords={() => setView({ s: 'words' })}
+      />
+    );
   }
 
   if (view.s === 'dance') {
     return <DanceScreen onHome={() => setView({ s: 'home' })} />;
+  }
+
+  if (view.s === 'words') {
+    return <WordTracingScreen onHome={() => setView({ s: 'home' })} onFinish={() => setView({ s: 'home' })} />;
   }
 
   const set = getSet(view.id);
