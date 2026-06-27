@@ -6,8 +6,8 @@ const tileStyle = (background: string): React.CSSProperties => ({
   fontSize: 84, fontWeight: 800, color: '#fff', boxShadow: '0 10px 24px rgba(0,0,0,.15)',
 });
 
-export function HomeGrid({ sets, onPick, onDance }:
-  { sets: LetterSet[]; onPick: (id: SetId) => void; onDance: () => void }) {
+export function HomeGrid({ sets, onPick, onDance, onWords }:
+  { sets: LetterSet[]; onPick: (id: SetId) => void; onDance: () => void; onWords: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center h-full" style={{ background: '#fdf2f8' }}>
       <h1 className="text-3xl font-extrabold text-pink-500 mb-10">Kids Playground</h1>
@@ -18,6 +18,10 @@ export function HomeGrid({ sets, onPick, onDance }:
             <span className="mt-3 text-xl text-slate-600 font-bold">{set.label}</span>
           </button>
         ))}
+        <button onClick={onWords} className="flex flex-col items-center">
+          <div style={tileStyle('#10b981')}>🐱</div>
+          <span className="mt-3 text-xl text-slate-600 font-bold">First Words</span>
+        </button>
         <button onClick={onDance} className="flex flex-col items-center">
           <div style={tileStyle('linear-gradient(135deg,#f59e0b,#ec4899)')}>🎵</div>
           <span className="mt-3 text-xl text-slate-600 font-bold">Dance Party</span>
