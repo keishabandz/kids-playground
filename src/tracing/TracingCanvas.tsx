@@ -15,8 +15,8 @@ function ptsStr(points: Point[]): string {
   return points.map((p) => `${p.x},${p.y}`).join(' ');
 }
 
-export function TracingCanvas({ letter, color, onComplete }:
-  { letter: Letter; color: string; onComplete: () => void }) {
+export function TracingCanvas({ letter, color, onComplete, size = 'min(82vw, 70vh)' }:
+  { letter: Letter; color: string; onComplete: () => void; size?: string }) {
   const ref = useRef<SVGSVGElement>(null);
   const [state, setState] = useState<TraceState>(createTraceState);
   const firedRef = useRef(false);
@@ -73,7 +73,7 @@ export function TracingCanvas({ letter, color, onComplete }:
       preserveAspectRatio="xMidYMid meet"
       onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); handleMove(e); }}
       onPointerMove={handleMove}
-      style={{ width: 'min(82vw, 70vh)', height: 'min(82vw, 70vh)', touchAction: 'none' }}
+      style={{ width: size, height: size, touchAction: 'none' }}
     >
       {/* grey guide track for the whole letter */}
       {sampled.map((s, i) => (
