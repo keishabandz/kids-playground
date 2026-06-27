@@ -57,6 +57,7 @@ export function WordTracingScreen({ onHome, onFinish }: { onHome: () => void; on
                 letter={byGlyph[g]}
                 color={colorFor(i)}
                 size={size}
+                fit
                 onComplete={handleComplete}
               />
             ) : (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Letter, Point } from '../letters/types';
-import { angle, samplePolyline } from './geometry';
+import { angle, samplePolyline, squareBox } from './geometry';
 import { createTraceState, applyPointer, type SampledStrokes, type TraceState } from './tracingState';
 
 const STEP = 0.04;          // checkpoint spacing (fine, for smooth fill)
@@ -15,8 +15,8 @@ function ptsStr(points: Point[]): string {
   return points.map((p) => `${p.x},${p.y}`).join(' ');
 }
 
-export function TracingCanvas({ letter, color, onComplete, size = 'min(82vw, 70vh)' }:
-  { letter: Letter; color: string; onComplete: () => void; size?: string }) {
+export function TracingCanvas({ letter, color, onComplete, size = 'min(82vw, 70vh)', fit = false }:
+  { letter: Letter; color: string; onComplete: () => void; size?: string; fit?: boolean }) {
   const ref = useRef<SVGSVGElement>(null);
   const [state, setState] = useState<TraceState>(createTraceState);
   const firedRef = useRef(false);
@@ -24,6 +24,12 @@ export function TracingCanvas({ letter, color, onComplete, size = 'min(82vw, 70v
   const sampled: SampledStrokes = useMemo(
     () => letter.strokes.map((stroke) => samplePolyline(stroke.points, STEP)),
     [letter],
+  );
+
+  // When `fit`, crop the viewBox tight to the glyph so it fills the box.
+  const [bx, by, side] = useMemo(
+    () => (fit ? squareBox(sampled) : [0, 0, 1]),
+    [sampled, fit],
   );
 
   useEffect(() => {
@@ -35,7 +41,11 @@ export function TracingCanvas({ letter, color, onComplete, size = 'min(82vw, 70v
 
   function toUnit(e: React.PointerEvent): Point {
     const r = ref.current!.getBoundingClientRect();
-    return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+    // Map screen position back to normalized 0..1 coords, accounting for crop.
+    return {
+      x: bx + ((e.clientX - r.left) / r.width) * side,
+      y: by + ((e.clientY - r.top) / r.height) * side,
+    };
   }
 
   function handleMove(e: React.PointerEvent) {
@@ -69,7 +79,7 @@ export function TracingCanvas({ letter, color, onComplete, size = 'min(82vw, 70v
   return (
     <svg
       ref={ref}
-      viewBox="0 0 1 1"
+      viewBox={`${bx} ${by} ${side} ${side}`}
       preserveAspectRatio="xMidYMid meet"
       onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); handleMove(e); }}
       onPointerMove={handleMove}

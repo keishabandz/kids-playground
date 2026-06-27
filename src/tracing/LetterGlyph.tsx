@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Letter } from '../letters/types';
-import { samplePolyline } from './geometry';
+import { samplePolyline, squareBox } from './geometry';
 
 /**
  * Static (non-interactive) render of a letter's guide track — grey by default,
@@ -13,9 +13,10 @@ export function LetterGlyph({ letter, color, done, size, dim }:
     () => letter.strokes.map((stroke) => samplePolyline(stroke.points, 0.04)),
     [letter],
   );
+  const [bx, by, side] = useMemo(() => squareBox(sampled), [sampled]);
   const pts = (s: { x: number; y: number }[]) => s.map((p) => `${p.x},${p.y}`).join(' ');
   return (
-    <svg viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet"
+    <svg viewBox={`${bx} ${by} ${side} ${side}`} preserveAspectRatio="xMidYMid meet"
          style={{ width: size, height: size, opacity: dim ? 0.45 : 1 }}>
       {sampled.map((s, i) => (
         <polyline key={`t${i}`} points={pts(s)} fill="none" stroke="#e5e7eb"

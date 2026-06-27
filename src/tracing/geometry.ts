@@ -8,6 +8,24 @@ export function lerp(a: Point, b: Point, t: number): Point {
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 }
 
+/**
+ * A square viewBox [x, y, side] tightly framing a letter's strokes (plus pad),
+ * so the glyph fills its rendered box instead of floating in empty margins.
+ */
+export function squareBox(strokes: Point[][], pad = 0.08): [number, number, number] {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const s of strokes) for (const p of s) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const side = Math.max(maxX - minX, maxY - minY) + pad * 2;
+  return [cx - side / 2, cy - side / 2, side];
+}
+
 /** Angle (radians) from a to b, for orienting direction arrows. */
 export function angle(a: Point, b: Point): number {
   return Math.atan2(b.y - a.y, b.x - a.x);
