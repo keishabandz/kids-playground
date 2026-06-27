@@ -32,6 +32,14 @@ export function LetterTracingScreen({ letters, onHome, onFinish }:
       <span className="absolute top-4 right-4 text-xl font-bold text-slate-400">
         {letter.glyph} · {index + 1}/{letters.length}
       </span>
+      {letter.word && (
+        <div className="absolute top-12 left-0 right-0 flex flex-col items-center pointer-events-none">
+          <span style={{ fontSize: 52, lineHeight: 1 }}>{letter.emoji}</span>
+          <span className="mt-1 text-2xl font-extrabold text-slate-600">
+            {letter.glyph} is for {letter.word}
+          </span>
+        </div>
+      )}
       {phase === 'trace' ? (
         <TracingCanvas key={traceKey} letter={letter} color={personality.color} onComplete={handleComplete} />
       ) : (
