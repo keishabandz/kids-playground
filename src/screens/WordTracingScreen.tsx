@@ -2,21 +2,23 @@ import { useState } from 'react';
 import { lowercase } from '../letters/lowercase';
 import { WORDLIST } from '../letters/wordsList';
 import { TracingCanvas } from '../tracing/TracingCanvas';
+import { LetterGlyph } from '../tracing/LetterGlyph';
 
-// Look up a lowercase letterform by its glyph.
 const byGlyph = Object.fromEntries(lowercase.map((l) => [l.glyph, l]));
 
 export function WordTracingScreen({ onHome, onFinish }: { onHome: () => void; onFinish: () => void }) {
-  const [wi, setWi] = useState(0);          // word index
-  const [li, setLi] = useState(0);          // letter index within the word
+  const [wi, setWi] = useState(0);   // word index
+  const [li, setLi] = useState(0);   // active letter index within the word
   const [phase, setPhase] = useState<'trace' | 'reward'>('trace');
   const [traceKey, setTraceKey] = useState(0);
 
   const word = WORDLIST[wi];
   const glyphs = word.text.split('');
-  const letter = byGlyph[glyphs[li]];
-  const color = letter.personalities[0].color;
   const isLastWord = wi === WORDLIST.length - 1;
+
+  // each letter sized so the whole word fits across the screen
+  const size = `min(${Math.floor(86 / glyphs.length)}vw, 46vh)`;
+  const colorFor = (i: number) => byGlyph[glyphs[i]].personalities[0].color;
 
   function handleComplete() {
     if (li < glyphs.length - 1) {
@@ -39,26 +41,44 @@ export function WordTracingScreen({ onHome, onFinish }: { onHome: () => void; on
       <button onClick={onHome} aria-label="home" className="absolute top-3 left-3 text-3xl">🏠</button>
       <span className="absolute top-4 right-4 text-xl font-bold text-slate-400">{wi + 1}/{WORDLIST.length}</span>
 
-      {/* picture + the word, filling in letter by letter */}
-      <div className="absolute top-10 left-0 right-0 flex flex-col items-center pointer-events-none">
-        <span style={{ fontSize: 56, lineHeight: 1 }}>{word.emoji}</span>
-        <div className="mt-1 flex gap-2">
-          {glyphs.map((g, i) => (
-            <span key={i} style={{
-              fontSize: 48, fontWeight: 800,
-              color: phase === 'reward' || i < li ? '#10b981' : i === li ? '#ec4899' : '#cbd5e1',
-            }}>{g}</span>
-          ))}
-        </div>
-      </div>
+      <span className="absolute top-8 left-0 right-0 text-center pointer-events-none" style={{ fontSize: 60 }}>
+        {word.emoji}
+      </span>
 
       {phase === 'trace' ? (
-        <TracingCanvas key={traceKey} letter={letter} color={color} onComplete={handleComplete} />
+        // the whole word laid out: completed letters inked, the active one
+        // traceable (star + arrows), upcoming letters faint.
+        <div className="flex items-end" style={{ gap: 'min(2vw, 14px)', marginTop: 70 }}>
+          {glyphs.map((g, i) =>
+            i === li ? (
+              <TracingCanvas
+                key={traceKey}
+                letter={byGlyph[g]}
+                color={colorFor(i)}
+                size={size}
+                onComplete={handleComplete}
+              />
+            ) : (
+              <LetterGlyph
+                key={i}
+                letter={byGlyph[g]}
+                color={colorFor(i)}
+                size={size}
+                done={i < li}
+                dim={i > li}
+              />
+            ),
+          )}
+        </div>
       ) : (
-        <button onClick={nextWord} className="flex flex-col items-center">
-          <span style={{ fontSize: 96 }}>{word.emoji}</span>
-          <span className="text-5xl font-extrabold" style={{ color: '#10b981' }}>{word.text}</span>
-          <span className="mt-3 text-2xl text-pink-500 font-bold">
+        <button onClick={nextWord} className="flex flex-col items-center" style={{ marginTop: 60 }}>
+          <div className="flex items-end" style={{ gap: 'min(2vw, 14px)' }}>
+            {glyphs.map((g, i) => (
+              <LetterGlyph key={i} letter={byGlyph[g]} color={colorFor(i)} size={size} done />
+            ))}
+          </div>
+          <span className="mt-3 text-4xl font-extrabold" style={{ color: '#10b981' }}>{word.text}</span>
+          <span className="mt-2 text-2xl text-pink-500 font-bold">
             {isLastWord ? '🎉 I did it!' : 'Next word! 👉'}
           </span>
         </button>
