@@ -16,8 +16,9 @@ export function WordTracingScreen({ onHome, onFinish }: { onHome: () => void; on
   const glyphs = word.text.split('');
   const isLastWord = wi === WORDLIST.length - 1;
 
-  // each letter sized so the whole word fits across the screen
-  const size = `min(${Math.floor(86 / glyphs.length)}vw, 46vh)`;
+  // each letter as big as possible while the whole word still fits across
+  const size = `min(${Math.floor(96 / glyphs.length)}vw, 78vh)`;
+  const rewardSize = `min(${Math.floor(64 / glyphs.length)}vw, 34vh)`;
   const colorFor = (i: number) => byGlyph[glyphs[i]].personalities[0].color;
 
   function handleComplete() {
@@ -41,14 +42,14 @@ export function WordTracingScreen({ onHome, onFinish }: { onHome: () => void; on
       <button onClick={onHome} aria-label="home" className="absolute top-3 left-3 text-3xl">🏠</button>
       <span className="absolute top-4 right-4 text-xl font-bold text-slate-400">{wi + 1}/{WORDLIST.length}</span>
 
-      <span className="absolute top-8 left-0 right-0 text-center pointer-events-none" style={{ fontSize: 60 }}>
+      <span className="absolute top-3 left-0 right-0 text-center pointer-events-none" style={{ fontSize: 44 }}>
         {word.emoji}
       </span>
 
       {phase === 'trace' ? (
         // the whole word laid out: completed letters inked, the active one
         // traceable (star + arrows), upcoming letters faint.
-        <div className="flex items-end" style={{ gap: 'min(2vw, 14px)', marginTop: 70 }}>
+        <div className="flex items-end justify-center w-full" style={{ gap: 'min(1.5vw, 10px)', marginTop: '7vh' }}>
           {glyphs.map((g, i) =>
             i === li ? (
               <TracingCanvas
@@ -71,10 +72,10 @@ export function WordTracingScreen({ onHome, onFinish }: { onHome: () => void; on
           )}
         </div>
       ) : (
-        <button onClick={nextWord} className="flex flex-col items-center" style={{ marginTop: 60 }}>
-          <div className="flex items-end" style={{ gap: 'min(2vw, 14px)' }}>
+        <button onClick={nextWord} className="flex flex-col items-center" style={{ marginTop: '8vh' }}>
+          <div className="flex items-end" style={{ gap: 'min(1.5vw, 10px)' }}>
             {glyphs.map((g, i) => (
-              <LetterGlyph key={i} letter={byGlyph[g]} color={colorFor(i)} size={size} done />
+              <LetterGlyph key={i} letter={byGlyph[g]} color={colorFor(i)} size={rewardSize} done />
             ))}
           </div>
           <span className="mt-3 text-4xl font-extrabold" style={{ color: '#10b981' }}>{word.text}</span>
