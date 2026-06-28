@@ -39,6 +39,20 @@ body { overscroll-behavior: none; -webkit-user-select: none; user-select: none; 
 .dance-notes { position: absolute; top: 14px; width: 100%; text-align: center; font-size: 26px; letter-spacing: 18px; opacity: .5; animation: notes-float 3s ease-in-out infinite; }
 @keyframes notes-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
+/* Word screen: skip buttons, confetti, dancing emoji */
+.skip-btn { display:flex; align-items:center; justify-content:center; width:54px; height:54px; border-radius:50%; background:#fff; color:#64748b; font-size:26px; box-shadow:0 4px 12px rgba(0,0,0,.12); }
+.skip-btn-sm { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:50%; background:#fff; color:#64748b; font-size:20px; box-shadow:0 3px 8px rgba(0,0,0,.12); }
+.confetti { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; }
+.confetti i { position:absolute; top:-12vh; width:12px; height:16px; border-radius:3px; animation: confetti-fall linear infinite; }
+@keyframes confetti-fall { 0%{ transform: translateY(0) rotate(0); opacity:1; } 100%{ transform: translateY(125vh) rotate(900deg); opacity:1; } }
+.emoji-dance { display:inline-block; animation: emoji-dance 1.3s ease-in-out infinite; }
+@keyframes emoji-dance {
+  0%,100% { transform: translate(-36px,0) rotate(-14deg); }
+  25%     { transform: translate(0,-28px) rotate(0deg); }
+  50%     { transform: translate(36px,0) rotate(14deg); }
+  75%     { transform: translate(0,-28px) rotate(0deg); }
+}
+
 /* Celebration marquee — all glyphs dance across the screen */
 .marquee { overflow: hidden; }
 .marquee-inner { display: flex; align-items: center; gap: 16px; width: max-content; animation: scrollx 40s linear infinite; }
